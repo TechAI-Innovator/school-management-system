@@ -284,8 +284,9 @@ def save_student_scores(student_id, class_id, subject_id, test1, test2, exam_sco
             cumulative_score = EXCLUDED.cumulative_score,
             pupils_avg = EXCLUDED.pupils_avg
         """, (student_id, class_id, subject_id, test1, test2, exam_score, term_id, total_test, total_score, last_term_cum_bf, cumulative_score, pupils_avg))
+        
         conn.commit()
-        print("scores suceefully saved i the datbase")
+        
         return True
     except Exception as e:
         print(f"Error saving scores: {e}")
@@ -324,7 +325,7 @@ def get_last_term_cumulative(student_id, class_id, subject_id, current_term_id):
             FROM terms 
             WHERE term_id = ?
         """, (current_term_id,))
-        current_term_info = cursor.fetchone()
+        current_term_info = dict(cursor.fetchone())
 
         if not current_term_info:
             return 0  
@@ -336,13 +337,13 @@ def get_last_term_cumulative(student_id, class_id, subject_id, current_term_id):
             return 0
 
         cursor.execute("""
-            SELECT term_id 
+            SELECT term_id, term, year 
             FROM terms 
             WHERE term_id < ?
             ORDER BY term_id DESC
             LIMIT 1;
         """, (current_term_id,))
-        previous_term_info = cursor.fetchone()
+        previous_term_info = dict(cursor.fetchone())
 
         if not previous_term_info:
             return 0  
@@ -354,8 +355,9 @@ def get_last_term_cumulative(student_id, class_id, subject_id, current_term_id):
             FROM scores 
             WHERE student_id = ? AND class_id = ? AND subject_id = ? AND term_id = ?
         """, (student_id, class_id, subject_id, previous_term_id))
-        result = cursor.fetchone()
+        result = dict(cursor.fetchone())
 
+        
         return float(result["cumulative_score"]) if result and "cumulative_score" in result else 0
     except Exception as e:
         print(f"Error fetching last term cumulative score: {e}")
